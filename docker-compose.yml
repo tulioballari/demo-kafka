@@ -16,13 +16,11 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,CONNECTIONS_FROM_HOST://localhost:19092
-
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONNECTIONS_FROM_HOST:PLAINTEXT
 
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_LOG_RETENTION_MS: 3600000
       KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 50000
-    volumes:
-      - kafka-data:/var/lib/kafka/data/
 
   kafka-manager:
     image: hlebalbau/kafka-manager:stable
@@ -35,6 +33,3 @@ services:
       - APPLICATION_SECRET=letmein
     ports:
       - "9000:9000"
-
-volumes:
-  kafka-data:
