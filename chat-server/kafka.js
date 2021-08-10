@@ -6,11 +6,14 @@ const ssl = !!sasl
 
 // This creates a client instance that is configured to connect to the Kafka broker provided by
 // the environment variable KAFKA_BOOTSTRAP_SERVER
+console.log(`process.env.KAFKA_BOOTSTRAP_SERVER=${process.env.KAFKA_BOOTSTRAP_SERVER?.split(';')}`);
+const brokers = process.env.KAFKA_BOOTSTRAP_SERVER?.split(';') || ['localhost:19092'];
 const kafka = new Kafka({
-  clientId: 'kafka-producer',
-  brokers: ['localhost:19092'],
+  clientId: `kafka-chat-${process.pid}`,
+  brokers,
   ssl,
-  sasl
+  sasl,
+  connectionTimeout: 100_000
 })
 
 const ROOMS_TOPIC = 'ROOMS'
@@ -24,7 +27,7 @@ module.exports = async function init() {
   const producer = kafka.producer()
   await producer.connect()
 
-  const consumer = kafka.consumer({groupId: 'asdf' })
+  const consumer = kafka.consumer({groupId: `${process.pid}` })
 
   await consumer.connect()
   await consumer.subscribe({ topic: ROOMS_TOPIC, fromBeginning: true })
@@ -35,11 +38,12 @@ module.exports = async function init() {
       let key =  message.key.toString()
       let value = message.value.toString()
 
-      console.log({ key, value, topic })
+      console.log('eachMessage', { key, value, topic })
 
       if (topic == ROOMS_TOPIC) {
         let [nick, room] = key.split('-')
-        onChangeStatus(nick, room, value)
+        let {id, status} = JSON.parse(value)
+        onChangeStatus(id, nick, room, status)
 
       } else if (topic == MESSAGES_TOPIC) {
         let {nick, message} = JSON.parse(value)
@@ -51,21 +55,21 @@ module.exports = async function init() {
 
   return {
 
-  async login(nick, room) {
+  async login(id, nick, room) {
     await producer.send({
       topic: ROOMS_TOPIC,
       messages: [{
         key: `${nick}-${room}`,
-        value: 'LOGIN'
+        value: JSON.stringify({ id, status: 'LOGIN' })
       }]
     })
   },
-  async logout(nick, room) {
+  async logout(id, nick, room) {
     await producer.send({
       topic: ROOMS_TOPIC,
       messages: [{
         key: `${nick}-${room}`,
-        value: 'LOGOUT'
+        value: JSON.stringify({ id, status: 'LOGOUT' })
       }]
     })
   },

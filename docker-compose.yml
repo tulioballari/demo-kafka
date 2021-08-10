@@ -22,14 +22,43 @@ services:
       KAFKA_LOG_RETENTION_MS: 3600000
       KAFKA_LOG_RETENTION_CHECK_INTERVAL_MS: 50000
 
-  kafka-manager:
-    image: hlebalbau/kafka-manager:stable
+      KAFKA_LOG4J_LOGGERS: "kafka=WARN,kafka.controller=WARN,kafka.coordinator=WARN,state.change.logger=WARN,kafka.cluster=WARN,kafka.log=WARN,kafka.server=WARN"
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+
+  # kafka-manager:
+  #   image: hlebalbau/kafka-manager:stable
+  #   depends_on:
+  #     - kafka
+  #     - zookeeper
+  #   command: -Dconfig.file=/kafka-manager/conf/application.conf -Dapplication.home=/kafkamanager
+  #   environment:
+  #     ZK_HOSTS: zookeeper:2181
+  #     APPLICATION_SECRET: letmein
+  #   ports:
+  #     - "9000:9000"
+
+  server-a:
+    image: node:14-alpine3.13
     depends_on:
       - kafka
-      - zookeeper
-    command: -Dconfig.file=/kafka-manager/conf/application.conf -Dapplication.home=/kafkamanager
+    user: "node"
+    working_dir: /home/node/app
+    volumes:
+      - ./chat-server:/home/node/app
+    expose:
+      - "8081"
+    command: sh -c "sleep 20 && npm start"
     environment:
-      - ZK_HOSTS=zookeeper:2181
-      - APPLICATION_SECRET=letmein
-    ports:
-      - "9000:9000"
+      KAFKA_BOOTSTRAP_SERVER: kafka:19092
+
+
+  # haproxy:
+  #   image: haproxy:1.7-alpine
+  #   volumes:
+  #     - ./haproxy /usr/local/etc/haproxy
+  #   # links:
+  #   #   - weba
+  #   #   - webb
+  #   #   - webc
+  #   ports:
+  #     - "8081:8081"

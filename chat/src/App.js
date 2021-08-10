@@ -17,6 +17,7 @@ const Messages = props => {
 
 const Online = props => props.data.map(m => <li id={m[0]}>{m[1]}</li>)
 
+// eslint-disable-next-line import/no-anonymous-default-export
 export default () => {
   const [room, setRoom] = useLocalStorage('room','');
   const [id, setId] = useLocalStorage('id', '');
@@ -37,7 +38,7 @@ export default () => {
       socket.emit('join',id,room);
     }
 
-    socket.on('message que',(nick, room, message) => {
+    socket.on('message que',(nick, message) => {
       setMessages(draft => {
         draft.push([nick,message])
       })
